@@ -8,9 +8,9 @@
         ]).
 
 %%%_* Defines ==========================================================
--define(SERVER_URI,     "http://localhost:7474/").
--define(DATA_PATH,      "db/data/").
--define(SERVER_TIMEOUT, 3000).
+-define(SERVER_URI,       env(server_uri)).
+-define(SERVER_DATA_PATH, env(server_data_path)).
+-define(SERVER_TIMEOUT,   env(server_timeout)).
 
 %%%_* Code =============================================================
 %%%_* API --------------------------------------------------------------
@@ -59,7 +59,7 @@ parse_response({ok, {{"HTTP/1.1", 404, "Not Found"}, Headers, Body}}) ->
 parse_response({error, _Reason}=Error) -> Error.
 
 path("/"++Path) -> Path;
-path(Path)      -> ?DATA_PATH++Path.
+path(Path)      -> ?SERVER_DATA_PATH++Path.
 
 %%%_* Helpers ----------------------------------------------------------
 ensure_started(App) ->
@@ -78,6 +78,10 @@ kf(Key, List, Default) ->
     false        -> Default;
     {Key, Value} -> Value
   end.
+
+env(Key) ->
+  {ok, Value} = application:get_env(bb, Key),
+  Value.
 
 b(B) when is_binary(B) -> unicode:characters_to_list(B);
 b(L) when is_list(L)   -> unicode:characters_to_binary(L).
