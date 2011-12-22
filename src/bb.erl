@@ -24,15 +24,8 @@ get_node(Id) when is_integer(Id) ->
 
 %%%_* Internals --------------------------------------------------------
 ensure_server_running() ->
-  try
-    {ok, Config} = rest(get, "/"),
-    _DataPath    = kf(b("data"), Config)
-  catch
-    throw:{error, econnrefused} ->
-      erlang:throw({error, server_not_running});
-    _:R ->
-      erlang:throw({error, R})
-  end.
+  {ok, Config} = rest(get, "/"),
+  _DataPath    = kf(b("data"), Config).
 
 rest(Method, Path) ->
   Request  = {path(Path), []},
@@ -62,8 +55,7 @@ parse_response({ok, {{"HTTP/1.1", 404, "Not Found"}, Headers, Body}}) ->
     _ ->
       parse_response({error, invalid_method})
   end;
-parse_response({error, Error}) ->
-  throw({error, Error}).
+parse_response({error, _Reason}=Error) -> Error.
 
 path("/"++Path) -> Path;
 path(Path)      -> ?DATA_PATH++Path.
