@@ -16,6 +16,7 @@
 %%%_* API --------------------------------------------------------------
 start() ->
   ensure_started(inets),
+  ensure_started(bb),
   ensure_server_running().
 
 get_node(Id) when is_integer(Id) ->
