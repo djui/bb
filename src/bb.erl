@@ -11,6 +11,7 @@
 -define(SERVER_URI,       env(server_uri)).
 -define(SERVER_DATA_PATH, env(server_data_path)).
 -define(SERVER_TIMEOUT,   env(server_timeout)).
+-define(USER_ME,          env(user_me)).
 
 %%%_* Code =============================================================
 %%%_* API --------------------------------------------------------------
@@ -19,8 +20,9 @@ start() ->
   ensure_started(bb),
   ensure_server_running().
 
+get_node(me)                     -> get_node(?USER_ME);
 get_node(Id) when is_integer(Id) ->
-  {ok, Res} = rest(get, "node/"++erlang:integer_to_list(Id)),
+  {ok, Res} = rest(get, normalize(["node", Id]),
   kf(b("data"), Res).
 
 %%%_* Internals --------------------------------------------------------
@@ -29,13 +31,13 @@ ensure_server_running() ->
   _DataPath    = kf(b("data"), Config).
 
 rest(Method, Path) ->
-  Request  = {path(Path), []},
+  Request  = {abs_path(Path), []},
   Response = send_request(Method, Request),
   parse_response(Response).
 
 rest(Method, Path, Data) ->
   Payload  = percent:url_encode(Data),
-  Request  = {path(Path), [], "application/x-www-form-urlencoded", Payload},
+  Request  = {abs_path(Path), [], "application/x-www-form-urlencoded", Payload},
   Response = send_request(Method, Request),
   parse_response(Response).
 
@@ -58,8 +60,10 @@ parse_response({ok, {{"HTTP/1.1", 404, "Not Found"}, Headers, Body}}) ->
   end;
 parse_response({error, _Reason}=Error) -> Error.
 
-path("/"++Path) -> Path;
-path(Path)      -> ?SERVER_DATA_PATH++Path.
+path(L) -> filename:join(lists:map(stringify/1, L)).
+
+abs_path("/"++Path) -> Path;
+abs_path(Path)      -> ?SERVER_DATA_PATH++Path.
 
 %%%_* Helpers ----------------------------------------------------------
 ensure_started(App) ->
@@ -68,6 +72,11 @@ ensure_started(App) ->
     {error, {already_started, App}} -> ok;
     {error, _}=Error                -> throw(Error)
   end.
+
+stringify(S) when is_list(S)    -> S;
+stringify(N) when is_integer(N) -> erlang:integer_to_list(N);
+stringify(A) when is_atom(A)    -> erlang:atom_to_list(A);
+stringify(B) when is_binary(B)  -> unicode:characters_to_list(B).
 
 kf(Key, List) ->
   {Key, Value} = lists:keyfind(Key, 1, List),
