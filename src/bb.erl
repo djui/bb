@@ -22,20 +22,20 @@ start() ->
 
 get_node(me)                     -> get_node(?USER_ME);
 get_node(Id) when is_integer(Id) ->
-  {ok, Res} = rest(get, normalize(["node", Id]),
+  {ok, Res} = request(get, normalize(["node", Id]),
   kf(b("data"), Res).
 
 %%%_* Internals --------------------------------------------------------
 ensure_server_running() ->
-  {ok, Config} = rest(get, "/"),
+  {ok, Config} = request(get, "/"),
   _DataPath    = kf(b("data"), Config).
 
-rest(Method, Path) ->
+request(Method, Path) ->
   Request  = {abs_path(Path), []},
   Response = send_request(Method, Request),
   parse_response(Response).
 
-rest(Method, Path, Data) ->
+request(Method, Path, Data) ->
   Payload  = percent:url_encode(Data),
   Request  = {abs_path(Path), [], "application/x-www-form-urlencoded", Payload},
   Response = send_request(Method, Request),
