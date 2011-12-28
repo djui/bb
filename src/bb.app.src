@@ -3,7 +3,7 @@
  [ {description, "BrainBranch"}
  , {vsn, "1"}
  , {registered, []}
- , {applications, [kernel, stdlib]}
+ , {applications, [kernel, stdlib, inets]}
  , {env, [ {server_uri,       "http://localhost:7474/"}
          , {server_data_path, "db/data/"}
          , {server_timeout,   3000}
