@@ -102,11 +102,13 @@ format_api({Name, Method, Path0, ResParams, _ReqParams}) ->
   io:format("  bb_rest:request(~p, ~p, Data).~n", [Method, Path]).
 
 format_params(Params) ->
-  ["P"++bb_util:s(N) || N <- lists:seq(1, length(Params))].
+  ["Param"++Key || {Key, _} <- Params].
 
 format_path(Path, Params) ->
-  Fun = fun({Key, Value}, P) -> re:replace(P, "{"++Key++"}", Value) end,
-  lists:foldl(Fun, Path, Params).
+  RegExp  = "{"++Key++"}",
+  Replace = "\"++Param"++Key++"++\"",
+  F = fun({Key, _}, P) -> re:replace(P, RegExp, Replace) end,
+  lists:foldl(F, Path, Params).
 
 collect_application(#application{resources=Resources}) ->
   lists:flatten(collect_resources(Resources)).
