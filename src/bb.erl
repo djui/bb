@@ -6,18 +6,18 @@
         ]).
 
 %%%_* Defines ==========================================================
--define(USER_ME, bb_helper:env(user_me)).
+-define(USER_ME, bb_util:env(user_me)).
 
 %%%_* Code =============================================================
 %%%_* API --------------------------------------------------------------
 start() ->
-  bb_helper:ensure_started(bb),
+  bb_util:ensure_started(bb),
   bb_rest:init().
 
 get_node(me)                     -> get_node(?USER_ME);
 get_node(Id) when is_integer(Id) ->
   {ok, Res} = bb_rest:request(get, ["node", Id]),
-  bb_helper:kf(bb_helper:b("data"), Res).
+  bb_util:kf(bb_util:b("data"), Res).
 
 add_node(FromId, RelProps, NodeProps) when is_integer(FromId) ->
   Id  = create_node(NodeProps),

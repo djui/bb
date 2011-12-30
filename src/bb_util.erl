@@ -1,14 +1,15 @@
--module(bb_helper).
+-module(bb_util).
 
 %%%_* Exports ==========================================================
--export([ b/1
+-export([ a/1
+        , b/1
         , ensure_started/1
         , path/1
         , env/1
         , kf/2
         , kf/3
         , priv_file/1
-        , stringify/1
+        , s/1
         ]).
 
 %%%_* Defines ==========================================================
@@ -28,12 +29,7 @@ ensure_started(Application, {error, {not_started, Dependency}}) ->
 ensure_started(Application, {error, Reason}) ->
   erlang:error({app_start_failed, Application, Reason}).
 
-path(L) -> filename:join(lists:map(fun stringify/1, L)).
-
-stringify(S) when is_list(S)    -> S;
-stringify(N) when is_integer(N) -> erlang:integer_to_list(N);
-stringify(A) when is_atom(A)    -> erlang:atom_to_list(A);
-stringify(B) when is_binary(B)  -> unicode:characters_to_list(B).
+path(L) -> filename:join(lists:map(fun s/1, L)).
 
 kf(Key, List) ->
   {Key, Value} = lists:keyfind(Key, 1, List),
@@ -45,8 +41,17 @@ kf(Key, List, Default) ->
     {Key, Value} -> Value
   end.
 
+a(S) when is_list(S)    -> erlang:list_to_atom(S);
+a(N) when is_integer(N) -> a(s(N));
+a(A) when is_atom(A)    -> A.
+
+s(S) when is_list(S)    -> S;
+s(N) when is_integer(N) -> erlang:integer_to_list(N);
+s(A) when is_atom(A)    -> erlang:atom_to_list(A);
+s(B) when is_binary(B)  -> unicode:characters_to_list(B).
+
 b(B) when is_binary(B) -> unicode:characters_to_list(B);
-b(L) when is_list(L)   -> unicode:characters_to_binary(L).
+b(S) when is_list(S)   -> unicode:characters_to_binary(S).
 
 env(Key) ->
   {ok, Value} = application:get_env(bb, Key),

@@ -11,15 +11,15 @@
 -include_lib("bb/include/wadl.hrl").
 
 %%%_* Defines ==========================================================
--define(SERVER_URI,       bb_helper:env(server_uri)).
--define(SERVER_DATA_PATH, bb_helper:env(server_data_path)).
--define(SERVER_TIMEOUT,   bb_helper:env(server_timeout)).
+-define(SERVER_URI,       bb_util:env(server_uri)).
+-define(SERVER_DATA_PATH, bb_util:env(server_data_path)).
+-define(SERVER_TIMEOUT,   bb_util:env(server_timeout)).
 
 %%%_* Code =============================================================
 %%%_* API --------------------------------------------------------------
 init() ->
   ensure_server_running(),
-  parse_wadl(get_wadl()).
+  hotload_wadl(parse_wadl(get_wadl())).
 
 request(Method, Path) ->
   Request  = {abs_path(Path), []},
@@ -35,16 +35,16 @@ request(Method, Path, Data) ->
 %%%_* Internals --------------------------------------------------------
 ensure_server_running() ->
   {ok, Config} = request(get, "/"),
-  _DataPath    = bb_helper:kf(bb_helper:b("data"), Config).
+  _DataPath    = bb_util:kf(bb_util:b("data"), Config).
 
 send_request(Method, {Path, []}) ->
   Url = ?SERVER_URI++Path,
   httpc:request(Method, {Url, []}, [{timeout, ?SERVER_TIMEOUT}], []).
  
 parse_response({ok, {{"HTTP/1.1", 200, "OK"}, Headers, Body}}) ->
-  case bb_helper:kf("content-type", Headers) of
+  case bb_util:kf("content-type", Headers) of
     "application/vnd.sun.wadl+xml" ->
-      Schema      = bb_helper:priv_file("wadl.xsd"),
+      Schema      = bb_util:priv_file("wadl.xsd"),
       {ok, Model} = erlsom:compile_xsd_file(Schema),
       {ok, _WADL} = erlsom:parse(Body, Model);
     "application/json" ->
@@ -54,10 +54,10 @@ parse_response({ok, {{"HTTP/1.1", 200, "OK"}, Headers, Body}}) ->
       parse_response({error, invalid_content_type})
   end;
 parse_response({ok, {{"HTTP/1.1", 404, "Not Found"}, Headers, Body}}) ->
-  case bb_helper:kf("content-type", Headers) of
+  case bb_util:kf("content-type", Headers) of
     "application/json" ->
       Payload = mochijson2:decode(Body, [{format, proplist}]),
-      Message = bb_helper:kf(bb_helper:b("message"), Payload),
+      Message = bb_util:kf(bb_util:b("message"), Payload),
       {error, Message};
     _ ->
       parse_response({error, invalid_method})
@@ -75,8 +75,41 @@ get_wadl() ->
 parse_wadl(WADL) ->
   collect_application(WADL).
 
+hotload_wadl(WADL) ->
+  Module   = bb_rest_api,
+  BeamDir  = filename:dirname(code:which(?MODULE)),
+  Filename = bb_util:path([BeamDir, Module]), %% or "generated" ?
+  Binary   = <<"???">>,
+  %{module, Module} = code:load_binary(Module, Filename, Binary),
+  lists:foreach(fun format_api/1, WADL),
+  WADL.
+
+format_api({Name, Method, Path, [], []}) ->
+  io:format("~p() ->~n", [Name]),
+  io:format("  bb_rest:request(~p, ~p).~n", [Method, Path]);
+format_api({Name, Method, Path, [], _ReqParams}) ->
+  io:format("~p(Data) ->~n", [Name]),
+  io:format("  bb_rest:request(~p, ~p, Data).~n", [Method, Path]);
+format_api({Name, Method, Path0, ResParams, []}) ->
+  Params = format_params(ResParams),
+  Path   = format_path(Path0, ResParams),
+  io:format("~p(~p) ->~n", [Name, string:join(Params, ", ")]),
+  io:format("  bb_rest:request(~p, ~p).~n", [Method, Path]);
+format_api({Name, Method, Path0, ResParams, _ReqParams}) ->
+  Params = format_params(ResParams),
+  Path   = format_path(Path0, ResParams),
+  io:format("~p(~p, Data) ->~n", [Name, string:join(Params, ", ")]),
+  io:format("  bb_rest:request(~p, ~p, Data).~n", [Method, Path]).
+
+format_params(Params) ->
+  ["P"++bb_util:s(N) || N <- lists:seq(1, length(Params))].
+
+format_path(Path, Params) ->
+  Fun = fun({Key, Value}, P) -> re:replace(P, "{"++Key++"}", Value) end,
+  lists:foldl(Fun, Path, Params).
+
 collect_application(#application{resources=Resources}) ->
-  collect_resources(Resources).
+  lists:flatten(collect_resources(Resources)).
 
 collect_resources([]) -> [];
 collect_resources([#resources{ base=Base
@@ -124,17 +157,21 @@ map_type({qname, _href, "int",    "xs", "xsd"}) -> integer;
 map_type({qname, _href, "long",   "xs", "xsd"}) -> integer;
 map_type({qname, _href, "string", "xs", "xsd"}) -> string.
 
-map_method("GET")    -> get;
-map_method("PUT")    -> put;
-map_method("POST")   -> post;
-map_method("DELETE") -> delete.
+%% map_method("OPTIONS") -> options;
+map_method("GET")     -> get;
+%% map_method("HEAD")    -> head;
+map_method("POST")    -> post;
+map_method("PUT")     -> put;
+map_method("DELETE")  -> delete.
+%% map_method("TRACE")   -> trace.
+%% map_method("CONNECT") -> connect.
 
 %%%_* Helpers ----------------------------------------------------------
 join_path(Path1, Path2) ->
   string:strip(Path1, right, $/) ++ "/" ++ string:strip(Path2, left, $/).
 
 create_wadl_hrl() ->
-  SchemaFilename = bb_helper:priv_file("wadl.xsd"),
+  SchemaFilename = bb_util:priv_file("wadl.xsd"),
   RecDefFilename = "include/wadl.hrl",
   erlsom:write_xsd_hrl_file(SchemaFilename, RecDefFilename).
       
