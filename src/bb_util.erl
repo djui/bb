@@ -58,13 +58,7 @@ env(Key) ->
   Value.
 
 priv_file(Filename) ->
-  %% PrivDir = code:priv_dir(bb),
-  %% filename:join(PrivDir, Filename).
-  filename:join([ filename:dirname(code:which(?MODULE))
-                , ".."
-                , "priv"
-                , Filename
-                ]).
+  filename:join([ filename:dirname(code:which(?MODULE)), "../priv", Filename]).
 
 %%% Mode: Erlang
 %%% End.

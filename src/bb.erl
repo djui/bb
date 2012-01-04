@@ -6,17 +6,20 @@
         ]).
 
 %%%_* Defines ==========================================================
--define(USER_ME, bb_util:env(user_me)).
+-define(SERVER_URI,       bb_util:env(server_uri)).
+-define(SERVER_DATA_PATH, bb_util:env(server_data_path)).
+-define(USER_ME,          bb_util:env(user_me)).
 
 %%%_* Code =============================================================
 %%%_* API --------------------------------------------------------------
 start() ->
   bb_util:ensure_started(bb),
-  bb_rest:init().
+  ensure_server_running().
 
 get_node(me)                     -> get_node(?USER_ME);
 get_node(Id) when is_integer(Id) ->
-  {ok, Res} = bb_rest:request(get, ["node", Id]),
+  API = neo4j_api:new(?SERVER_URI++?SERVER_DATA_PATH),
+  {ok, Res} = API:getNode(bb_util:s(Id)),
   bb_util:kf(bb_util:b("data"), Res).
 
 add_node(FromId, RelProps, NodeProps) when is_integer(FromId) ->
@@ -36,6 +39,9 @@ create_rel(RelProps) -> nyi.
 connect_nodes(FromId, ToId) -> nyi.
 
 %%%_* Internals --------------------------------------------------------
+ensure_server_running() ->
+  {ok, Config} = rest_client:request(get, ?SERVER_URI),
+  _DataPath    = bb_util:kf(bb_util:b("data"), Config).
 
 %%% Mode: Erlang
 %%% End.
