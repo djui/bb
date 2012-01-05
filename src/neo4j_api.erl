@@ -1,4 +1,4 @@
-%%% @doc Provides client for Neo4j's REST API
+%%% @doc Provides client for Neo4j's REST API v1.5
 -module(neo4j_api, [URI]).
 
 %%%_* Exports ==========================================================
@@ -66,6 +66,7 @@
         , setRelationshipProperty/2
         , singlePath/1
         , traverse/2
+        , version/0
         ]).
 
 %%%_* Code =============================================================
@@ -134,3 +135,4 @@ setNodeProperty(PnodeId, Pkey) -> rest_client:request(put, URI++"node/"++PnodeId
 setRelationshipProperty(PrelationshipId, Pkey) -> rest_client:request(put, URI++"relationship/"++PrelationshipId++"/properties/"++Pkey++"").
 singlePath(PnodeId) -> rest_client:request(post, URI++"node/"++PnodeId++"/path").
 traverse(PnodeId, PreturnType) -> rest_client:request(post, URI++"node/"++PnodeId++"/traverse/"++PreturnType++"").
+version() -> "1.5".
