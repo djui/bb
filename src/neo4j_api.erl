@@ -57,9 +57,9 @@
         , invokeRelationshipExtension/3
         , jsonCreateNodeIndex/0
         , jsonCreateRelationshipIndex/0
-        , pagedTraverse/2
+        , pagedTraverse/3
         , performBatchOperations/0
-        , removePagedTraverser/2
+        , removePagedTraverser/3
         , setAllNodeProperties/1
         , setAllRelationshipProperties/1
         , setNodeProperty/2
@@ -125,9 +125,9 @@ invokeNodeExtension(PnodeId, Pname, Pmethod) -> rest_client:request(post, URI++"
 invokeRelationshipExtension(PrelationshipId, Pname, Pmethod) -> rest_client:request(post, URI++"ext/"++Pname++"/relationship/"++PrelationshipId++"/"++Pmethod++"").
 jsonCreateNodeIndex() -> rest_client:request(post, URI++"index/node").
 jsonCreateRelationshipIndex() -> rest_client:request(post, URI++"index/relationship").
-pagedTraverse(PtraverserId, PreturnType) -> rest_client:request(get, URI++"node/{nodeId}/paged/traverse/"++PreturnType++"/"++PtraverserId++"").
+pagedTraverse(PnodeId, PtraverserId, PreturnType) -> rest_client:request(get, URI++"node/"++PnodeId++"/paged/traverse/"++PreturnType++"/"++PtraverserId++"").
 performBatchOperations() -> rest_client:request(post, URI++"batch").
-removePagedTraverser(PtraverserId, PreturnType) -> rest_client:request(delete, URI++"node/{nodeId}/paged/traverse/"++PreturnType++"/"++PtraverserId++"").
+removePagedTraverser(PnodeId, PtraverserId, PreturnType) -> rest_client:request(delete, URI++"node/"++PnodeId++"/paged/traverse/"++PreturnType++"/"++PtraverserId++"").
 setAllNodeProperties(PnodeId) -> rest_client:request(put, URI++"node/"++PnodeId++"/properties").
 setAllRelationshipProperties(PrelationshipId) -> rest_client:request(put, URI++"relationship/"++PrelationshipId++"/properties").
 setNodeProperty(PnodeId, Pkey) -> rest_client:request(put, URI++"node/"++PnodeId++"/properties/"++Pkey++"").
