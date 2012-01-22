@@ -76,16 +76,6 @@ ensure_server_running() ->
   end.
 
 %%%_* Helpers ----------------------------------------------------------
-kf(Key, List) -> kf(Key, List, undefined).
-
-kf(Key, List, Default) ->
-  case lists:keyfind(Key, 1, List) of
-    {Key, Value} -> Value;
-    false        -> Default
-  end.
-
-b(B) when is_binary(B) -> unicode:characters_to_list(B);
-b(S) when is_list(S)   -> unicode:characters_to_binary(S).
 
 %%% Mode: Erlang
 %%% End.
